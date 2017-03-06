@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>作业打飞机</title>
+		<style type="text/css">
+			*{
+				margin: 0;
+				padding: 0;
+			}
+			html,body{
+				width: 100%;
+				height: 100%;
+			}
+			#canvas{
+				box-shadow: 0 0 50px gray;
+				display: block;
+                margin: 0 auto;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas" width="375" height=" 627"></canvas>
+	</body>
+	<script src="js/loading.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript">
+		//创建键值对路径
+		var info = {
+			"background":"img/background.png",
+			"plane": "img/plane.png",
+            "prop": "img/prop.png",
+            "bomb": "img/bomb.png",
+            "bullet":"img/bullet1.png",
+            "enemy1":"img/enemy1.png",
+            "enemy2":"img/enemy2.png",
+            "enemy3":"img/enemy3.png"
+		};
+		//加载图片资源
+		loading(info,{
+			done:main
+		});
+		
+		//main主函数
+		function main(loadingimg){
+			//开始绘制画布的飞机
+			var canvas = document.getElementById("canvas");
+			var ctx = canvas.getContext('2d');
+			//获取canvas的宽高
+			canvaswidth = canvas.width;
+			canvasheight = canvas.height;
+			//飞机的起始位置
+			var loadX = canvaswidth/2 - 33;
+			var loadY = canvasheight - 82;
+			//飞机对象
+			var plane = {
+				w:66, //宽
+				h:82, //高
+				x:canvaswidth/2 - 33, //当前X轴
+				y:canvasheight - 82, //当前Y轴
+				startX:0, // 起始X轴
+				startY:0, // 起始Y轴
+				endX:0,  //  结束X轴
+				endY:0,  //  结束Y轴
+				flag:true,  // 布尔值
+				//飞机绘制
+				draw:function(num){
+					if(num % 5 ==0){
+						ctx.drawImage(loadingimg.plane,this.w,0,this.w,this.h,this.x,this.y,this.w,this.h);
+					}else{
+						ctx.drawImage(loadingimg.plane,0,0,this.w,this.h,this.x,this.y,this.w,this.h); 
+					}
+				},
+				draws:function(d){
+					if (d >= 0 ) {
+						ctx.drawImage(loadingimg.plane,66 * d,0,this.w,this.h,this.x,this.y,this.w,this.h);
+					}
+				},
+				//飞机点击移动事件
+				move:function(){
+					canvas.addEventListener('touchstart',function(e){
+						var ev = e || window.event;					
+							var touchs = ev.touches[0];
+							plane.startX = touchs.pageX;
+							plane.startY = touchs.pageY;
+					},false);
+					
+					canvas.addEventListener('touchmove',function(e){
+							var ev = e || window.event;
+							var touchs = ev.touches[0];								
+							if(plane.flag == true){
+								var x = touchs.pageX - plane.startX+ loadX + plane.endX;
+								var y = touchs.pageY - plane.startY+ loadY + plane.endY;
+								plane.x = x ;
+								plane.y = y ;
+								plane.draw();
+							}else{
+								var x = touchs.pageX - plane.startX + plane.endX;
+								var y = touchs.pageY - plane.startY + plane.endY;
+								plane.x = x ;
+								plane.y = y ;
+								plane.draw();
+							}
+					},false);
+					canvas.addEventListener('touchend',function(e){
+						plane.endX = plane.x;
+						plane.endY = plane.y;
+						plane.flag = false;
+					},false);
+				}
+			};
+			plane.draw();
+			//背景对象
+			var backgrounds = {
+				x:0,
+				y:0,
+				w:canvaswidth,
+				h:canvasheight,
+				draw:function(){
+					ctx.drawImage(loadingimg.background,this.x,this.y,this.w,this.h);
+					ctx.drawImage(loadingimg.background,this.x,this.y-this.h,this.w,this.h);
+				},
+				move:function(){
+					this.y+=5;
+					if(this.y >= this.h){
+						this.y=0;
+					}
+					backgrounds.draw();
+				}
+			};
+			backgrounds.draw();
+			//子弹对象
+			var zidanarray = [];
+			var zidans = function(){
+					this.w = 6;
+					this.h = 14;
+					this.x = plane.x+plane.w/2 -1;
+					this.y = plane.y - 10;
+					//子弹的速度
+					this.speed = 8;
+					this.draw = function(){	
+						this.y -= this.speed;
+						ctx = canvas.getContext('2d');
+						ctx.beginPath();
+						ctx.drawImage(loadingimg.bullet,0,0,this.w,this.h,this.x,this.y,this.w,this.h);
+				};
+			};
+			//随机数随机敌机
+			function suiji(max,min){
+				return parseInt(Math.random()*(max-min+1)+min);
+			}
+			//敌机数组
+			var dijuns =[];
+			//随机敌机出现率
+			var dijihuansuan = function(){
+				var dijilv = suiji(10,1);
+				if(dijilv >= 10){
+					var djsd = new diji2();//大飞机
+					dijuns.push(djsd);
+				}else if(dijilv >= 6){
+					var djsz = new diji3();//中飞机
+					dijuns.push(djsz);
+				}else{
+					var djsx = new diji1();//小飞机
+					dijuns.push(djsx);
+				}
+			};
+			//帧数,由于动画速度
+			var num =0;
+			//敌机3绘制 中
+			var diji3 = function(){
+				this.w =45.5;
+				this.h = 62;
+				this.x = suiji(canvaswidth - 45.5 ,0);
+				this.y = -62;
+				this.speed = suiji(7,2);//速度
+				this.indexs = 3;//血量
+				this.jia =0;//中弹量
+				this.draw = function(b){
+						if(b >= 0){
+							this.y = this.y;
+							ctx.drawImage(loadingimg.enemy3,b*45.5,0,this.w,this.h,this.x,this.y,this.w,this.h);
+						}else{
+							this.y += this.speed;
+							ctx.drawImage(loadingimg.enemy3,0,0,this.w,this.h,this.x,this.y,this.w,this.h);
+						}
+				};
+			};	
+			//敌机1绘制 小
+			var diji1 = function(){
+				this.w = 36.8;
+				this.h = 34;
+				this.x = suiji(canvaswidth - 36.8 ,0);
+				this.y = -34;
+				this.indexs = 1;
+				this.jia =0;
+				this.speed = suiji(7,2);
+				this.draw = function(a){
+					if( a >= 0 ){						
+							this.y = this.y;
+							ctx.drawImage(loadingimg.enemy1,a*37,0,this.w,this.h,this.x,this.y,this.w,this.h);	
+					}else{
+						this.y += this.speed;
+						ctx.drawImage(loadingimg.enemy1,0,0,this.w,this.h,this.x,this.y,this.w,this.h);
+					}
+				};
+			};
+			//敌机2绘制 大
+			var diji2 = function(){
+				this.w = 108.4;
+				this.h = 164;
+				this.x = suiji(canvaswidth - 108.4 ,0);
+				this.y = -164;
+				this.indexs = 5;
+				this.jia = 0;
+				this.speed = suiji(4,2);
+				this.draw = function(c){
+					if(c>=0){
+						this.y = this.y;
+						ctx.drawImage(loadingimg.enemy2,c*110,0,this.w,this.h,this.x,this.y,this.w,this.h);
+					}else{
+						this.y += this.speed;
+						ctx.drawImage(loadingimg.enemy2,0,0,this.w,this.h,this.x,this.y,this.w,this.h);
+					}
+				};
+			};
+			
+			
+			var a = 0;//小飞机
+			var b = 0;//中飞机
+			var c = 0;//大飞机
+			var d = 0;//本机
+			var bensi = [];//本机死亡数组
+			var disi = [];//敌军死亡数组
+			var benjiflag = true;//本机死亡限制 只一次
+			var benjiflag2 = true;//动画停止
+			//本机爆炸动画
+			var benjibao = function(){
+				if (benjiflag) {
+					benjiflag = false;
+					bensi.push(plane);
+				}
+			}
+			var benjibaos = function(){
+				if (bensi.length > 0) {
+					if (benjiflag2) {
+						bensi[0].draws(d);
+							if (num % 4 == 0) {
+							d++;
+							if (d > 5) {
+								d = 0;
+								benjiflag2 = false;
+							}
+						}	
+					}
+				}
+			}
+			//敌军爆炸动画
+			var dibao = function(w){
+				disi.push(dijuns[w]);									
+			}
+			var dibaos = function(){
+				for (var i = 0 ; i< disi.length;i++) {
+					if (disi[i].w == 36.8) {
+						disi[i].draw(a);
+						if(num% 4 == 0){
+							a++;
+							if(a > 5){
+								disi.splice(i,1);
+								i--;
+								a = 0;
+							}
+						}
+					}else if (disi[i].w == 45.5) {
+						disi[i].draw(b);
+						if(num% 4 ==0){
+							b++;
+							if(b > 6){
+								disi.splice(i,1);
+								i--;
+								b = 0;
+							}
+						}
+					}else if (disi[i].w == 108.4) {
+						disi[i].draw(c);
+						if(num% 4 ==0){
+							c++;
+							if(c > 10){
+								disi.splice(i,1);
+								i--;
+								c = 0;
+							}
+						}
+					}	
+				}					
+			};
+			//敌军和子弹的碰撞
+			var diandzi = function(){
+				for (var j = 0; j < dijuns.length;j++) {
+					var dis = dijuns[j];
+					//获取当前敌军的x和y
+						var dx = dis.x;
+						var dxw = dx + dis.w;
+						var dy = dis.y;
+						var dyh = dy+ dis.h;
+					for (var i = 0; i < zidanarray.length;i++) {
+						var zis = zidanarray[i];
+						//获取子弹的当前x和y
+						var zx = zis.x;
+						var zxw = zx + zis.w;
+						var zy = zis.y;
+						var zyh = zy + zis.h;
+						//判断子弹是否撞上.
+						if(zx > dx && zxw < dxw && zy > dy && zyh < dyh){
+							dis.indexs -= 1;
+							zidanarray.splice(i,1);
+							i--;
+							if(dis.indexs <= 0 ){
+								dibao(j);
+								dijuns.splice(j,1);
+								j--;
+							}
+						}
+						
+					}
+				}
+			};
+			//敌军和本机碰撞
+			var gameover = function(){
+				if (dijuns.length >1) {
+					for (var i=0;i<dijuns.length ;i++) {
+					//敌军最小和最大X和Y的位置
+					var dijunminX = dijuns[i].x;
+					var dijunminy = dijuns[i].y;
+					var dijunmaxX = dijuns[i].x + dijuns[i].w;
+					var dijunmaxY = dijuns[i].y + dijuns[i].h;
+					//本机最小和最大X和Y的位置
+					var planeminX = plane.x;
+					var planeminY = plane.y;
+					var planemaxX = plane.x + plane.w;
+					var planemaxY = plane.y + plane.h;
+					if (planeminX >= dijunminX && planeminX <= dijunmaxX && planeminY >= dijunminy && planeminY <= dijunmaxY || planemaxX >= dijunminX && planemaxX <= dijunmaxX && planemaxY >= dijunminy && planemaxY <= dijunmaxY) {
+						if (dijunminX >= planeminX && dijunminX <= planemaxX && dijunminy >= planeminY && dijunminy <= planemaxY || dijunmaxX >= planeminX && dijunmaxY <= planemaxY) {
+						benjibao();
+					}
+						benjibao();
+					}
+					 
+				}
+				}
+			}
+			//动画
+			function gameloop(){
+				num++;
+				backgrounds.move();
+				if (benjiflag) {
+					plane.draw(num);
+					plane.move();
+					//10帧 发射一次子弹
+				if(num % 10 == 0 ){
+					var zds = new zidans();
+					zidanarray.push(zds);
+				}
+				}
+				gameover();
+				//子弹发射数组限制
+				for (var i = 0; i <  zidanarray.length;i++) {
+					zidanarray[i].draw();
+					if(zidanarray[i].y <= - backgrounds.h){
+						zidanarray.splice(i,1);
+						i--;
+					}
+				}
+				//敌机出现数组限制
+				for (var i = 0; i < dijuns.length;i++) {
+					dijuns[i].draw();
+					if(dijuns[i].y >=  backgrounds.h){
+						dijuns.splice(i,1);
+						i--;
+					}
+				}
+				diandzi();
+				dibaos();
+				benjibaos();
+				//20帧 随机一个敌机
+				if(num % 20 == 0){
+					if(dijuns.length < 5){
+						dijihuansuan();
+					}
+					
+				}
+				
+				window.requestAnimationFrame(gameloop);
+			}
+			window.requestAnimationFrame(gameloop);
+		}
+	</script>
+</html>
